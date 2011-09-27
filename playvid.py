@@ -15,18 +15,35 @@ background_fps = cv.GetCaptureProperty(vidFile, cv.CV_CAP_PROP_FPS)
 background_WaitPerFrameInMillisec = int(1/fps * 1000/1)
 
 
+
 print 'Num. Frames = ', nFrames
 print 'Frame Rate = ', fps, ' frames per sec'
 
 #definition of class that is used to find ROIs for copying out the cages
 class rectangleFinder(object):
-	def __init__(self, frameImg, dilate_erode_reps = None, compute_hough= None, mouse_click_handler = None):
+	
+	def __init__(self, frameImg,numberOfRects, dilate_erode_reps = None,box_dragger = None, compute_hough= None, mouse_click_handler = None):
+		self.baseImg = cv.CreateImage(cv.GetSize(frameImg), frameImg.depth, 3)
+		cv.Copy(frameImg, self.baseImg) 
 		self.frameImg = frameImg
+		self.rectColor = cv.Scalar(1,255,1,1)
 		self.message = "Debug"
-		if compute_hough:
-			self.rectangular_image = self.compute_hough(frameImg)
+		self.statusText = None
+		self.rects = []
+		self.font = cv.InitFont(cv.CV_FONT_HERSHEY_SIMPLEX, 1.0, 1.0)
+		if box_dragger:
+			self.box_dragger = box_dragger
+			self.previousXY= None
+			self.boxPoints = []	
+		else:
+			self.box_dragger = None
 		if mouse_click_handler:
 			cv.SetMouseCallback("Main Window", self.handle_mouseclick, None)
+		#holds tuples of box dimensions
+		cv.ShowImage("Main Window", self.frameImg)
+		self._keyboard_handler(cv.WaitKey(0))	
+		if compute_hough:
+			self.houghImg = True 
 	def compute_hough(self, frameImg):
 		pass
 	def find_roi(self, houghImg):
@@ -34,9 +51,60 @@ class rectangleFinder(object):
 	def handle_mouseclick(self, event, x, y, flags, param):
 		print self.message
 		print x, y
-	
-#preliminary fetching of images
+		if self.box_dragger and event == cv.CV_EVENT_LBUTTONDOWN: 
+			if self.previousXY:
+				self.rects.append(((x,y), self.previousXY))
+				self.previousXY = None
+						
+			else:
+				self.previousXY = (x,y)
+			
+			self.update_frame()
+	def draw_rectangles(self):
+		for rect in self.rects:
+			cv.Rectangle(self.frameImg, rect[0], rect[1], self.rectColor)
+	def update_frame(self):
+		cv.Copy(self.baseImg, self.frameImg)
+		self.draw_rectangles()
+		self.draw_text()
+		print "preshowed image"
+		cv.ShowImage("Main Window", self.frameImg)
+		print "showed image"
+	 	self._keyboard_handler(cv.WaitKey())			
+		
+	def draw_text(self):
+		if self.statusText:
+			if self.statusTimeout > 0:
+				self._put_text(self.statusText)
+				self.statusTimeout -= 1
+			elif self.statusTimeout == 0 :
+				self.statusText = None	
 
+	
+		
+	def _keyboard_handler(self,code):
+		if code == 65288:
+			print "delete"	
+	 		self.statusText = "deleted"
+			self.statusTimeout =  1
+		if code == 10:
+			print "enter"
+			self.statusText = "enter"
+			self.statusTimeout = 1
+		if code == 27:
+			print "quit"
+			exit()
+		else:
+			print code
+			self.update_frame()
+			return
+		self.update_frame()
+	def _put_text(self,text):
+		cv.PutText(self.frameImg, text, (30,40),self.font, cv.Scalar(5,255,5,5))
+			
+class cageRect(object):
+#preliminary fetching of images
+	pass
 frameImg = cv.QueryFrame( vidFile )
 background_img = cv.QueryFrame(backgroundFile)
 
@@ -46,7 +114,7 @@ for x in xrange(3):
 #setting up data structures: windows
 cv.NamedWindow("Main Window")
 #setting up data structures: mousewhirl defined data structures
-ourROIFinder = rectangleFinder(frameImg, dilate_erode_reps = True, compute_hough = True, mouse_click_handler = True)
+ourROIFinder = rectangleFinder(frameImg, 3, dilate_erode_reps = True, box_dragger = True, compute_hough = True, mouse_click_handler = True)
 
 #setting up data structures: image buffers
 blurred_frame = cv.CreateImage(cv.GetSize(frameImg), cv.IPL_DEPTH_8U, 3)
@@ -58,6 +126,7 @@ writtenImg = cv.CreateImage(cv.GetSize(frameImg), frameImg.depth, 3)
 video_writer = cv.CreateVideoWriter("bitImage.avi", cv.CV_FOURCC('I', '4', '2', '0'), fps, cv.GetSize(frameImg), 1)
 video_difference = cv.CreateVideoWriter("difference.avi", cv.CV_FOURCC('I','4','2', '0'), fps, cv.GetSize(frameImg),1)
 #prematurely halt after 1000 frames for testing purposes.
+"""
 for f in xrange( nFrames ):
   if f == 1000:
      break
@@ -83,3 +152,4 @@ for f in xrange( nFrames ):
 #         when the script terminates it will close all windows it owns anyways
 cv.ReleaseVideoWriter(video_writer)
 cv.DestroyWindow( "Main Window" )
+"""
