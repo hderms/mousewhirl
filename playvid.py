@@ -146,16 +146,31 @@ def convert_to_cvrect(rect):
 	height = maximum_pt[1] - minimum_pt[1]
 	return (minimum_pt[0], minimum_pt[1], width, height)
 cvRects = [convert_to_cvrect(rect) for rect in ourROIFinder.rects]
-roiImages = []
+roiImagesAndWindows = []
+roiPrevFrame = []
+roiDifference = []
+roiBitImg = []
+roiGrayImg = []
+window_count = 0
+frameImg = cv.QueryFrame( vidFile )
 for x in cvRects:
-	cv.SetImageROI(background_img, x)
-	newmg = cv.CreateImage(cv.GetSize(background_img), background_img.depth, 3)
-	roiImages.append(newmg)
-	cv.Copy(background_img, newmg)
-	cv.ResetImageROI(background_img)
-	cv.ShowImage("Main Window", newmg)
-	cv.WaitKey(3000)
-	
+	cv.SetImageROI(frameImg, x)
+	prev_frame = cv.CreateImage(cv.GetSize(frameImg), frameImg.depth, 3)
+	newmg = cv.CreateImage(cv.GetSize(frameImg), frameImg.depth, 3)
+	difference = cv.CreateImage(cv.GetSize(frameImg), frameImg.depth, 3)
+	bitImg = cv.CreateImage(cv.GetSize(frameImg), frameImg.depth, 1)
+	grayImg = cv.CreateImage(cv.GetSize(frameImg), frameImg.depth, 1)
+	newWindow = cv.NamedWindow("ROI %s" % window_count)
+	roiImagesAndWindows.append((x, newmg, "ROI %s" %window_count))
+	cv.Copy(frameImg, prev_frame)
+	cv.Copy(frameImg, newmg)
+	roiPrevFrame.append(prev_frame)
+	roiDifference.append(difference)
+	roiGrayImg.append(grayImg)
+	roiBitImg.append(bitImg)
+	cv.ResetImageROI(frameImg)
+	window_count += 1
+
 #setting up data structures: image buffers
 blurred_frame = cv.CreateImage(cv.GetSize(frameImg), cv.IPL_DEPTH_8U, 3)
 grayscale_frame = cv.CreateImage(cv.GetSize(blurred_frame), frameImg.depth, 1)
@@ -166,17 +181,25 @@ writtenImg = cv.CreateImage(cv.GetSize(frameImg), frameImg.depth, 3)
 video_writer = cv.CreateVideoWriter("bitImage.avi", cv.CV_FOURCC('I', '4', '2', '0'), fps, cv.GetSize(frameImg), 1)
 video_difference = cv.CreateVideoWriter("difference.avi", cv.CV_FOURCC('I','4','2', '0'), fps, cv.GetSize(frameImg),1)
 #prematurely halt after 1000 frames for testing purposes.
-"""
+cv.SetMouseCallback("Main Window", lambda x, y, z, u, t: None, None)
 for f in xrange( nFrames ):
   if f == 1000:
      break
 
   frameImg = cv.QueryFrame( vidFile )
-  
+  for num, x in enumerate(roiImagesAndWindows):
+	cv.SetImageROI(frameImg,x[0])
+	cv.Copy(x[1], roiPrevFrame[num])
+	cv.Copy(frameImg, x[1])
+	cv.AbsDiff(x[1], roiPrevFrame[num], roiDifference[num])
+	cv.CvtColor(roiDifference[num], roiGrayImg[num], cv.CV_BGR2GRAY)
+	cv.Threshold(roiGrayImg[num], roiBitImg[num], 15,255, cv.CV_THRESH_BINARY)
+	cv.ShowImage(x[2], roiBitImg[num])
+	cv.ResetImageROI(frameImg)
   cv.ShowImage( "Main Window",  frameImg )
   #wait for the appropriate time so fps is proper when displaying doubt this takes into account the time it takes to write to screen 
   cv.WaitKey( waitPerFrameInMillisec  )
-   
+  """ 
   cv.AbsDiff( background_img, frameImg, differenceImg ) 
   cv.CvtColor(differenceImg,grayscale_frame, cv.CV_BGR2GRAY) 
   cv.Threshold(grayscale_frame,bitImg,15,255,cv.CV_THRESH_BINARY)
@@ -187,9 +210,10 @@ for f in xrange( nFrames ):
   cv.CvtColor(bitImg, writtenImg, cv.CV_GRAY2BGR)
   cv.WriteFrame(video_writer, writtenImg)
   cv.WriteFrame(video_difference, differenceImg)
+"""
 # When playing is done, delete the window
 #  NOTE: this step is not strictly necessary, 
 #         when the script terminates it will close all windows it owns anyways
 cv.ReleaseVideoWriter(video_writer)
 cv.DestroyWindow( "Main Window" )
-"""
+
