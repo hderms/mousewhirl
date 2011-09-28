@@ -51,8 +51,6 @@ class rectangleFinder(object):
 		pass
 	
 	def handle_mouseclick(self, event, x, y, flags, param):
-		print self.message
-		print x, y
 		if self.box_dragger and event == cv.CV_EVENT_LBUTTONDOWN: 
 			if self.previousXY:
 				self.rects.append(((x,y), self.previousXY))
@@ -71,9 +69,8 @@ class rectangleFinder(object):
 		cv.Copy(self.baseImg, self.frameImg)
 		self.draw_rectangles()
 		self.draw_text()
-		print "preshowed image"
 		cv.ShowImage("Main Window", self.frameImg)
-		print "showed image"
+
 	 	self._keyboard_handler(cv.WaitKey())			
 		
 	def draw_text(self):
