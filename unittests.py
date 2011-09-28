@@ -13,3 +13,5 @@ class testCVRect(unittest.TestCase):
         for number, element in enumerate(self.rectangle_list):
             self.assertEqual(playvid.convert_to_cvrect(element),self.solution_list[number], "Failed to calculate cvRect properly from input data")
                             
+if __name__=="__main__":
+	unittest.main()
