@@ -4,7 +4,10 @@ vidFile = cv.CaptureFromFile( '/home/tarpsocks/mice_videos/vid.avi' )
 
 backgroundFile = cv.CaptureFromFile( '/home/tarpsocks/mice_videos/background.avi' )
 
-#define constants
+#define constants:
+numRects = 3
+
+#define video information
 nFrames = int(  cv.GetCaptureProperty( vidFile, cv.CV_CAP_PROP_FRAME_COUNT ) )
 fps = cv.GetCaptureProperty( vidFile, cv.CV_CAP_PROP_FPS )
 waitPerFrameInMillisec = int( 1/fps * 1000/1 )
@@ -125,10 +128,34 @@ for x in xrange(3):
 	background_img = cv.QueryFrame(backgroundFile)
 #setting up data structures: windows
 cv.NamedWindow("Main Window")
-#setting up data structures: mousewhirl defined data structures
-ourROIFinder = rectangleFinder(frameImg, 3, dilate_erode_reps = True, box_dragger = True, compute_hough = True, mouse_click_handler = True)
-print ourROIFinder.rects
 
+#setting up data structures: mousewhirl defined data structures
+ourROIFinder = rectangleFinder(frameImg, numRects, dilate_erode_reps = True, box_dragger = True, compute_hough = True, mouse_click_handler = True)
+#report the chosen rectangles
+print "Our rectangle tuples chosen are as follows: %s" % ourROIFinder.rects
+def convert_to_cvrect(rect):
+	#assumes that these are non-rotated rectangles (all lines are perpendicular to axes of graph)
+	pt1 = rect[0]
+	pt2 = rect[1]
+	pt3 = tuple([pt1[0], pt2[1]])
+	pt4 = tuple([pt2[0], pt1[1]])
+	regular = [pt1, pt2, pt3, pt4]
+	minimum_pt = reduce(lambda a, b: a if a[0] <= b[0] and a[1] <= b[1]  else b, regular ) 
+	maximum_pt = reduce(lambda a,b: a if a[0] >= b[0] and a[1] >= b[1] else b, regular)
+	width = maximum_pt[0] - minimum_pt[0]
+	height = maximum_pt[1] - minimum_pt[1]
+	return (minimum_pt[0], minimum_pt[1], width, height)
+cvRects = [convert_to_cvrect(rect) for rect in ourROIFinder.rects]
+roiImages = []
+for x in cvRects:
+	cv.SetImageROI(background_img, x)
+	newmg = cv.CreateImage(cv.GetSize(background_img), background_img.depth, 3)
+	roiImages.append(newmg)
+	cv.Copy(background_img, newmg)
+	cv.ResetImageROI(background_img)
+	cv.ShowImage("Main Window", newmg)
+	cv.WaitKey(3000)
+	
 #setting up data structures: image buffers
 blurred_frame = cv.CreateImage(cv.GetSize(frameImg), cv.IPL_DEPTH_8U, 3)
 grayscale_frame = cv.CreateImage(cv.GetSize(blurred_frame), frameImg.depth, 1)
