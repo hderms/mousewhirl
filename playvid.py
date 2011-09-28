@@ -29,6 +29,7 @@ class rectangleFinder(object):
 		self.rectColor = cv.Scalar(1,255,1,1)
 		self.message = "Debug"
 		self.statusText = None
+		self.previousCode = None
 		self.rects = []
 		self.font = cv.InitFont(cv.CV_FONT_HERSHEY_SIMPLEX, 1.0, 1.0)
 		if box_dragger:
@@ -87,17 +88,28 @@ class rectangleFinder(object):
 			print "delete"	
 	 		self.statusText = "deleted"
 			self.statusTimeout =  1
-		if code == 10:
+			if self.rects:
+				self.rects.pop()
+			else:
+				self.statusText = "Can't delete empty rectangle"
+		elif code == 10:
 			print "enter"
-			self.statusText = "enter"
+			if self.previousCode == 10:
+				print "done"
+				return self.rects 
+			else:
+				print "not done"
+				self.statusText = "if finished press enter again"
+				self.previousCode = 10
 			self.statusTimeout = 1
-		if code == 27:
+		elif code == 27:
 			print "quit"
 			exit()
 		else:
 			print code
 			self.update_frame()
 			return
+		self.previousCode = code
 		self.update_frame()
 	def _put_text(self,text):
 		cv.PutText(self.frameImg, text, (30,40),self.font, cv.Scalar(5,255,5,5))
@@ -115,6 +127,7 @@ for x in xrange(3):
 cv.NamedWindow("Main Window")
 #setting up data structures: mousewhirl defined data structures
 ourROIFinder = rectangleFinder(frameImg, 3, dilate_erode_reps = True, box_dragger = True, compute_hough = True, mouse_click_handler = True)
+print ourROIFinder.rects
 
 #setting up data structures: image buffers
 blurred_frame = cv.CreateImage(cv.GetSize(frameImg), cv.IPL_DEPTH_8U, 3)
