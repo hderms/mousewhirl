@@ -1,0 +1,9 @@
+MouseWhirl:
+Creator and maintainer: Dermot Haughey
+
+I. Introduction
+II. Functionality
+
+1.Mousewhirl is a simple program utilizing opencv to track mice in cages, and monitor their movement. It has only been tested in limited environments, but in theory it should work better in the majority of cases (the original test case was in low-light, red-light condition via webcam footage, yielding low signal quality). 
+
+II. Mousewhirl requires the user to designate regions of interest at the start of the program in the form of rectangles (cages). Pressing enter twice will confirm the rectangles the user has drawn. Pressing delete will delete the most recent rectangle. Rectangles are designated by clicking on two opposite points for the rectangle-- a rectangle is drawn to join them.
