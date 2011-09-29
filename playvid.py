@@ -118,9 +118,9 @@ if __name__=="__main__":
     """
     
     #open videos
-    vidFile = cv.CaptureFromFile( '/home/tarpsocks/mice_videos/vid.avi' )
+    vidFile = cv.CaptureFromFile( '/home/tarpsocks/mice_videos/experimental/mousewhirl/vid.avi' )
     
-    backgroundFile = cv.CaptureFromFile( '/home/tarpsocks/mice_videos/background.avi' )
+    backgroundFile = cv.CaptureFromFile( '/home/tarpsocks/mice_videos/experimental/mousewhirl/background.avi' )
     
     #define constants:
     numRects = 3
@@ -176,7 +176,7 @@ if __name__=="__main__":
         roiBitImg.append(bitImg)
         cv.ResetImageROI(frameImg)
         window_count += 1
-    
+    small_image = cv.CreateImage(cv.GetSize(roiBitImg[0]), frameImg.depth, 3)
     #setting up data structures: image buffers
     blurred_frame = cv.CreateImage(cv.GetSize(frameImg), cv.IPL_DEPTH_8U, 3)
     grayscale_frame = cv.CreateImage(cv.GetSize(blurred_frame), frameImg.depth, 1)
@@ -184,6 +184,7 @@ if __name__=="__main__":
     differenceImg = cv.CreateImage(cv.GetSize(frameImg), frameImg.depth, 3)
     writtenImg = cv.CreateImage(cv.GetSize(frameImg), frameImg.depth, 3)
     #setting up data structures: video writers
+   
     video_writer = cv.CreateVideoWriter("bitImage.avi", cv.CV_FOURCC('I', '4', '2', '0'), fps, cv.GetSize(frameImg), 1)
     video_difference = cv.CreateVideoWriter("difference.avi", cv.CV_FOURCC('I','4','2', '0'), fps, cv.GetSize(frameImg),1)
     #temporary code
@@ -203,13 +204,13 @@ if __name__=="__main__":
         cv.CvtColor(roiDifference[num], roiGrayImg[num], cv.CV_BGR2GRAY)
         cv.Threshold(roiGrayImg[num], roiBitImg[num], 15,255, cv.CV_THRESH_BINARY)
         cv.ShowImage(x[2], roiBitImg[num])
-        cv.WriteFrame(small_writer, roiBitImg[num])
+        cv.CvtColor(roiBitImg[num], small_image, cv.CV_GRAY2BGR)
+        cv.WriteFrame(small_writer, small_image)
         cv.ResetImageROI(frameImg)
 
         cv.ShowImage("Main Window",frameImg)
         #wait for the appropriate time so fps is proper when displaying doubt this takes into account the time it takes to write to screen 
         cv.WaitKey( waitPerFrameInMillisec  )
-    cv.ReleaseVideoWriter(video_writer)
     cv.DestroyWindow( "Main Window" )       
 """ 
       cv.AbsDiff( background_img, frameImg, differenceImg ) 
