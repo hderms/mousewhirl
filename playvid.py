@@ -111,7 +111,28 @@ class rectangleFinder(object):
         self.update_frame()
     def _put_text(self,text):
         cv.PutText(self.frameImg, text, (30,40),self.font, cv.Scalar(5,255,5,5))
+def mainloop(nFrames, vidFile, roiImagesAndWindows, roiPrevFrame, roiDifference,roiGrayImg, roiBitImg, frameImg, waitPerFrameInMillisec):
+    
+    for f in xrange( nFrames ):
+        if f == 1000:
+            break
 
+        frameImg = cv.QueryFrame( vidFile )
+        for num, x in enumerate(roiImagesAndWindows):
+            cv.SetImageROI(frameImg,x[0])
+            cv.Copy(x[1], roiPrevFrame[num])
+            cv.Copy(frameImg, x[1])
+            cv.AbsDiff(x[1], roiPrevFrame[num], roiDifference[num])
+            cv.CvtColor(roiDifference[num], roiGrayImg[num], cv.CV_BGR2GRAY)
+            cv.Threshold(roiGrayImg[num], roiBitImg[num], 15,255, cv.CV_THRESH_BINARY)
+            cv.ShowImage(x[2], roiBitImg[num])
+            cv.ResetImageROI(frameImg)
+    
+            cv.ShowImage("Main Window",frameImg)
+            #wait for the appropriate time so fps is proper when displaying doubt this takes into account the time it takes to write to screen 
+            cv.WaitKey( waitPerFrameInMillisec  )
+
+        cv.DestroyWindow( "Main Window" )       
 if __name__=="__main__":
     """monolithic main conditional for testing purposes
     TODO: refactor into appropriate class
@@ -176,7 +197,7 @@ if __name__=="__main__":
         roiBitImg.append(bitImg)
         cv.ResetImageROI(frameImg)
         window_count += 1
-    
+        
     #setting up data structures: image buffers
     blurred_frame = cv.CreateImage(cv.GetSize(frameImg), cv.IPL_DEPTH_8U, 3)
     grayscale_frame = cv.CreateImage(cv.GetSize(blurred_frame), frameImg.depth, 1)
@@ -188,26 +209,7 @@ if __name__=="__main__":
     video_difference = cv.CreateVideoWriter("difference.avi", cv.CV_FOURCC('I','4','2', '0'), fps, cv.GetSize(frameImg),1)
     #prematurely halt after 1000 frames for testing purposes.
     cv.SetMouseCallback("Main Window", lambda x, y, z, u, t: None, None)
-    for f in xrange( nFrames ):
-        if f == 1000:
-            break
-
-        frameImg = cv.QueryFrame( vidFile )
-        for num, x in enumerate(roiImagesAndWindows):
-            cv.SetImageROI(frameImg,x[0])
-            cv.Copy(x[1], roiPrevFrame[num])
-            cv.Copy(frameImg, x[1])
-            cv.AbsDiff(x[1], roiPrevFrame[num], roiDifference[num])
-            cv.CvtColor(roiDifference[num], roiGrayImg[num], cv.CV_BGR2GRAY)
-            cv.Threshold(roiGrayImg[num], roiBitImg[num], 15,255, cv.CV_THRESH_BINARY)
-            cv.ShowImage(x[2], roiBitImg[num])
-            cv.ResetImageROI(frameImg)
-    
-            cv.ShowImage("Main Window",frameImg)
-            #wait for the appropriate time so fps is proper when displaying doubt this takes into account the time it takes to write to screen 
-            cv.WaitKey( waitPerFrameInMillisec  )
-
-    cv.DestroyWindow( "Main Window" )       
+    mainloop(nFrames, vidFile, roiImagesAndWindows, roiPrevFrame, roiDifference,roiGrayImg, roiBitImg, frameImg, waitPerFrameInMillisec)
 """ 
       cv.AbsDiff( background_img, frameImg, differenceImg ) 
       cv.CvtColor(differenceImg,grayscale_frame, cv.CV_BGR2GRAY) 
