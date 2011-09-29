@@ -14,4 +14,4 @@ class testCVRect(unittest.TestCase):
             self.assertEqual(playvid.convert_to_cvrect(element),self.solution_list[number], "Failed to calculate cvRect properly from input data")
                             
 if __name__=="__main__":
-	unittest.main()
+    unittest.main()

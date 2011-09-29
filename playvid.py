@@ -186,6 +186,8 @@ if __name__=="__main__":
     #setting up data structures: video writers
     video_writer = cv.CreateVideoWriter("bitImage.avi", cv.CV_FOURCC('I', '4', '2', '0'), fps, cv.GetSize(frameImg), 1)
     video_difference = cv.CreateVideoWriter("difference.avi", cv.CV_FOURCC('I','4','2', '0'), fps, cv.GetSize(frameImg),1)
+    #temporary code
+    small_writer = cv.CreateVideoWriter("isolatedcagebitimage.avi", cv.CV_FOURCC('I', '4', '2', '0'), fps, cv.GetSize(roiBitImg[0]), 1)
     #prematurely halt after 1000 frames for testing purposes.
     cv.SetMouseCallback("Main Window", lambda x, y, z, u, t: None, None)
     for f in xrange( nFrames ):
@@ -201,6 +203,7 @@ if __name__=="__main__":
         cv.CvtColor(roiDifference[num], roiGrayImg[num], cv.CV_BGR2GRAY)
         cv.Threshold(roiGrayImg[num], roiBitImg[num], 15,255, cv.CV_THRESH_BINARY)
         cv.ShowImage(x[2], roiBitImg[num])
+        cv.WriteFrame(small_writer, roiBitImg[num])
         cv.ResetImageROI(frameImg)
 
         cv.ShowImage("Main Window",frameImg)
