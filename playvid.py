@@ -118,9 +118,9 @@ if __name__=="__main__":
     """
     
     #open videos
-    vidFile = cv.CaptureFromFile( '/home/tarpsocks/mice_videos/vid.avi' )
+    vidFile = cv.CaptureFromFile( '/home/tarpsocks/mice_videos/mousewhirl/vid.avi' )
     
-    backgroundFile = cv.CaptureFromFile( '/home/tarpsocks/mice_videos/background.avi' )
+    backgroundFile = cv.CaptureFromFile( '/home/tarpsocks/mice_videos/mousewhirl/background.avi' )
     
     #define constants:
     numRects = 3
