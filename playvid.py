@@ -195,22 +195,22 @@ if __name__=="__main__":
         if f == 1000:
             break
 
-    frameImg = cv.QueryFrame( vidFile )
-    for num, x in enumerate(roiImagesAndWindows):
-        cv.SetImageROI(frameImg,x[0])
-        cv.Copy(x[1], roiPrevFrame[num])
-        cv.Copy(frameImg, x[1])
-        cv.AbsDiff(x[1], roiPrevFrame[num], roiDifference[num])
-        cv.CvtColor(roiDifference[num], roiGrayImg[num], cv.CV_BGR2GRAY)
-        cv.Threshold(roiGrayImg[num], roiBitImg[num], 15,255, cv.CV_THRESH_BINARY)
-        cv.ShowImage(x[2], roiBitImg[num])
-        cv.CvtColor(roiBitImg[num], small_image, cv.CV_GRAY2BGR)
-        cv.WriteFrame(small_writer, small_image)
-        cv.ResetImageROI(frameImg)
+    	frameImg = cv.QueryFrame( vidFile )
+    	for num, x in enumerate(roiImagesAndWindows):
+        	cv.SetImageROI(frameImg,x[0])
+        	cv.Copy(x[1], roiPrevFrame[num])
+        	cv.Copy(frameImg, x[1])
+        	cv.AbsDiff(x[1], roiPrevFrame[num], roiDifference[num])
+        	cv.CvtColor(roiDifference[num], roiGrayImg[num], cv.CV_BGR2GRAY)
+        	cv.Threshold(roiGrayImg[num], roiBitImg[num], 15,255, cv.CV_THRESH_BINARY)
+        	cv.ShowImage(x[2], roiBitImg[num])
+        	cv.CvtColor(roiBitImg[num], small_image, cv.CV_GRAY2BGR)
+        	cv.WriteFrame(small_writer, small_image)
+        	cv.ResetImageROI(frameImg)
 
-        cv.ShowImage("Main Window",frameImg)
-        #wait for the appropriate time so fps is proper when displaying doubt this takes into account the time it takes to write to screen 
-        cv.WaitKey( waitPerFrameInMillisec  )
+        	cv.ShowImage("Main Window",frameImg)
+        	#wait for the appropriate time so fps is proper when displaying doubt this takes into account the time it takes to write to screen 
+        	cv.WaitKey( waitPerFrameInMillisec  )
     cv.DestroyWindow( "Main Window" )       
 """ 
       cv.AbsDiff( background_img, frameImg, differenceImg ) 
