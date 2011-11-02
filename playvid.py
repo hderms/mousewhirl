@@ -1,5 +1,7 @@
 import cv
-
+import cProfile
+import operator
+ 
 
 
 def convert_to_cvrect(rect):
@@ -111,28 +113,36 @@ class rectangleFinder(object):
         self.update_frame()
     def _put_text(self,text):
         cv.PutText(self.frameImg, text, (30,40),self.font, cv.Scalar(5,255,5,5))
-def mainloop(nFrames, vidFile, roiImagesAndWindows, roiPrevFrame, roiDifference,roiGrayImg, roiBitImg, frameImg, waitPerFrameInMillisec):
-    
+def mainloop(nFrames, vidFile, roiImagesAndWindows, roiPrevFrame, roiDifference,roiGrayImg, roiBitImg, frameImg, waitPerFrameInMillisec, features = None, featureImg = None):
+    log = []
     for f in xrange( nFrames ):
         if f == 1000:
             break
-
+        features2 = []
         frameImg = cv.QueryFrame( vidFile )
         for num, x in enumerate(roiImagesAndWindows):
+            cv.ConvertImage(frameImg, featureImg, cv.IPL_DEPTH_8U)
             cv.SetImageROI(frameImg,x[0])
             cv.Copy(x[1], roiPrevFrame[num])
             cv.Copy(frameImg, x[1])
             cv.AbsDiff(x[1], roiPrevFrame[num], roiDifference[num])
             cv.CvtColor(roiDifference[num], roiGrayImg[num], cv.CV_BGR2GRAY)
-            cv.Threshold(roiGrayImg[num], roiBitImg[num], 15,255, cv.CV_THRESH_BINARY)
+            cv.Threshold(roiGrayImg[num], roiBitImg[num], 10,255, cv.CV_THRESH_BINARY)
             cv.ShowImage(x[2], roiBitImg[num])
+            count = cv.CountNonZero(roiBitImg[num])
+            log.append("%s count of %s is %s percent of frame" % (x[2], count, count/reduce(operator.__mul__, cv.GetSize(roiBitImg[num])) ))
+            if features and featureImg:
+				for tup in features:
+					cv.Circle(featureImg, tuple([int(x) for x in tup]), 4, cv.RGB(17,100,255))			
+				cv.ShowImage("Good Features", featureImg)
+				
             cv.ResetImageROI(frameImg)
     
-            cv.ShowImage("Main Window",frameImg)
+        cv.ShowImage("Main Window",frameImg)
             #wait for the appropriate time so fps is proper when displaying doubt this takes into account the time it takes to write to screen 
-            cv.WaitKey( waitPerFrameInMillisec  )
-
-        cv.DestroyWindow( "Main Window" )       
+        cv.WaitKey( waitPerFrameInMillisec  )
+    print "\n".join(log)
+    cv.DestroyWindow( "Main Window" )       
 if __name__=="__main__":
     """monolithic main conditional for testing purposes
     TODO: refactor into appropriate class
@@ -180,6 +190,7 @@ if __name__=="__main__":
     roiGrayImg = []
     window_count = 0
     frameImg = cv.QueryFrame( vidFile )
+    print "total pixels is %s" %reduce(operator.__mul__, cv.GetSize(frameImg))
     for x in cvRects:
         cv.SetImageROI(frameImg, x)
         prev_frame = cv.CreateImage(cv.GetSize(frameImg), frameImg.depth, 3)
@@ -209,7 +220,17 @@ if __name__=="__main__":
     video_difference = cv.CreateVideoWriter("difference.avi", cv.CV_FOURCC('I','4','2', '0'), fps, cv.GetSize(frameImg),1)
     #prematurely halt after 1000 frames for testing purposes.
     cv.SetMouseCallback("Main Window", lambda x, y, z, u, t: None, None)
-    mainloop(nFrames, vidFile, roiImagesAndWindows, roiPrevFrame, roiDifference,roiGrayImg, roiBitImg, frameImg, waitPerFrameInMillisec)
+    
+    tempframeImg = cv.CreateImage(cv.GetSize(frameImg), cv.IPL_DEPTH_8U, 1)
+    cv.ConvertImage(frameImg, tempframeImg, cv.IPL_DEPTH_8U)
+    goodfeatures = cv.CreateImage(cv.GetSize(frameImg), cv.IPL_DEPTH_32F, 1)
+    goodfeatures_temp = cv.CreateImage(cv.GetSize(frameImg), cv.IPL_DEPTH_32F, 1)
+    good_features_to_track = cv.GoodFeaturesToTrack(tempframeImg, goodfeatures, goodfeatures_temp, 100, 0.01, 0.01)
+    for tup in good_features_to_track:
+        cv.Circle(tempframeImg, tuple([int(x) for x in tup]), 4, cv.RGB(17,100,255))
+    cv.ShowImage("Good Features", tempframeImg)
+
+    mainloop(nFrames, vidFile, roiImagesAndWindows, roiPrevFrame, roiDifference,roiGrayImg, roiBitImg, frameImg, waitPerFrameInMillisec, features = good_features_to_track, featureImg = tempframeImg)
 """ 
       cv.AbsDiff( background_img, frameImg, differenceImg ) 
       cv.CvtColor(differenceImg,grayscale_frame, cv.CV_BGR2GRAY) 
