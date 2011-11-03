@@ -26,6 +26,13 @@ def convert_to_cvrect(rect):
     height = maximum_pt[1] - minimum_pt[1]
     return (minimum_pt[0], minimum_pt[1], width, height)
 
+
+def exclude_ROI_features(features, rectangles):
+	def test_inside(point, rectangles):
+		
+		
+
+	return filter(lambda x: True if test_inside(x, rectangles) else False, features)
 def mainloop(nFrames, vidFile, roiImagesAndWindows, roiPrevFrame, roiDifference,roiGrayImg, roiBitImg, frameImg, waitPerFrameInMillisec, features = None, featureImg = None):
     nonzeroCountLog = []
     
@@ -106,6 +113,7 @@ if __name__=="__main__":
     window_count = 0
     frameImg = cv.QueryFrame( vidFile )
     print "total pixels is %s" %reduce(operator.__mul__, cv.GetSize(frameImg))
+	rectangle_log = open("rect_log.txt")
     for x in cvRects:
         cv.SetImageROI(frameImg, x)
         prev_frame = cv.CreateImage(cv.GetSize(frameImg), frameImg.depth, 3)
@@ -123,6 +131,7 @@ if __name__=="__main__":
         roiBitImg.append(bitImg)
         cv.ResetImageROI(frameImg)
         window_count += 1
+		rectangle_log.write("%s min  , %s  max , %s width, %s height" % (rect[0], rect[1], rect[2], rect[3])
         
     #setting up data structures: image buffers
     blurred_frame = cv.CreateImage(cv.GetSize(frameImg), cv.IPL_DEPTH_8U, 3)
@@ -141,7 +150,7 @@ if __name__=="__main__":
     goodfeatures = cv.CreateImage(cv.GetSize(frameImg), cv.IPL_DEPTH_32F, 1)
     goodfeatures_temp = cv.CreateImage(cv.GetSize(frameImg), cv.IPL_DEPTH_32F, 1)
     good_features_to_track = cv.GoodFeaturesToTrack(tempframeImg, goodfeatures, goodfeatures_temp, 100, 0.01, 0.01)
-    
+    good_features_to_track = exclude_ROI_features(good_features_to_track, cvRects) 
     cv.ShowImage("Good Features", tempframeImg)
     draw_features(tempframeImg, good_features_to_track)
     mainloop(nFrames, vidFile, roiImagesAndWindows, roiPrevFrame, roiDifference,roiGrayImg, roiBitImg, frameImg, waitPerFrameInMillisec, features = good_features_to_track, featureImg = tempframeImg)

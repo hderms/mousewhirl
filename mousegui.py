@@ -1,3 +1,4 @@
+import cv
 class rectangleFinder(object):
     #definition of class that is used to find ROIs for copying out the cages
     def __init__(self, frameImg,numberOfRects, dilate_erode_reps = None,box_dragger = None, compute_hough= None, mouse_click_handler = None):
