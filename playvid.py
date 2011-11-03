@@ -1,9 +1,18 @@
 import cv
 import cProfile
 import operator
- 
+import mousegui
 
-
+def draw_features(image, features,size = 4, color = cv.RGB(17,100,255) ): 
+    for tup in good_features_to_track:
+        cv.Circle(tempframeImg, tuple([int(x) for x in tup]), 4, cv.RGB(17,100,255))  
+        
+def process_nonzero_count_log(nonzeroCountLog, filename = None):
+    print "\n".join(nonzeroCountLog)
+    if filename:
+        '''TODO: handle filesaving'''
+        pass
+    
 def convert_to_cvrect(rect):
     #assumes that these are non-rotated rectangles (all lines are perpendicular to axes of graph)
     pt1 = rect[0]
@@ -17,104 +26,9 @@ def convert_to_cvrect(rect):
     height = maximum_pt[1] - minimum_pt[1]
     return (minimum_pt[0], minimum_pt[1], width, height)
 
-class rectangleFinder(object):
-
-
-    #definition of class that is used to find ROIs for copying out the cages
-    
-    def __init__(self, frameImg,numberOfRects, dilate_erode_reps = None,box_dragger = None, compute_hough= None, mouse_click_handler = None):
-        self.baseImg = cv.CreateImage(cv.GetSize(frameImg), frameImg.depth, 3)
-        cv.Copy(frameImg, self.baseImg) 
-        self.frameImg = frameImg
-        self.rectColor = cv.Scalar(1,255,1,1)
-        self.message = "Debug"
-        self.statusText = None
-        self.previousCode = None
-        self.rects = []
-        self.font = cv.InitFont(cv.CV_FONT_HERSHEY_SIMPLEX, 1.0, 1.0)
-        if box_dragger:
-            self.box_dragger = box_dragger
-            self.previousXY= None
-            self.boxPoints = []    
-        else:
-            self.box_dragger = None
-        if mouse_click_handler:
-            cv.SetMouseCallback("Main Window", self.handle_mouseclick, None)
-        #holds tuples of box dimensions
-        cv.ShowImage("Main Window", self.frameImg)
-        self._keyboard_handler(cv.WaitKey(0))    
-        if compute_hough:
-            self.houghImg = True 
-            
-    def compute_hough(self, frameImg):
-        pass
-    
-    def find_roi(self, houghImg):
-        pass
-    
-    def handle_mouseclick(self, event, x, y, flags, param):
-        if self.box_dragger and event == cv.CV_EVENT_LBUTTONDOWN: 
-            if self.previousXY:
-                self.rects.append(((x,y), self.previousXY))
-                self.previousXY = None
-                        
-            else:
-                self.previousXY = (x,y)
-            
-            self.update_frame()
-            
-    def draw_rectangles(self):
-        for rect in self.rects:
-            cv.Rectangle(self.frameImg, rect[0], rect[1], self.rectColor)
-            
-    def update_frame(self):
-        cv.Copy(self.baseImg, self.frameImg)
-        self.draw_rectangles()
-        self.draw_text()
-        cv.ShowImage("Main Window", self.frameImg)
-
-        self._keyboard_handler(cv.WaitKey())            
-        
-    def draw_text(self):
-        if self.statusText:
-            if self.statusTimeout > 0:
-                self._put_text(self.statusText)
-                self.statusTimeout -= 1
-            elif self.statusTimeout == 0 :
-                self.statusText = None    
-                
-    def _keyboard_handler(self,code):
-        if code == 65288:
-            print "delete"    
-            self.statusText = "deleted"
-            self.statusTimeout =  1
-            if self.rects:
-                self.rects.pop()
-            else:
-                self.statusText = "Can't delete empty rectangle"
-        elif code == 10:
-            print "enter"
-            if self.previousCode == 10:
-                print "done"
-                return self.rects 
-            else:
-                print "not done"
-                self.statusText = "if finished press enter again"
-                self.previousCode = 10
-            self.statusTimeout = 1
-        elif code == 27:
-            print "quit"
-            exit()
-        else:
-            print code
-            self.update_frame()
-            return
-        self.previousCode = code
-        self.update_frame()
-    def _put_text(self,text):
-        cv.PutText(self.frameImg, text, (30,40),self.font, cv.Scalar(5,255,5,5))
 def mainloop(nFrames, vidFile, roiImagesAndWindows, roiPrevFrame, roiDifference,roiGrayImg, roiBitImg, frameImg, waitPerFrameInMillisec, features = None, featureImg = None):
-    log = []
+    nonzeroCountLog = []
+    
     for f in xrange( nFrames ):
         if f == 1000:
             break
@@ -130,26 +44,27 @@ def mainloop(nFrames, vidFile, roiImagesAndWindows, roiPrevFrame, roiDifference,
             cv.Threshold(roiGrayImg[num], roiBitImg[num], 10,255, cv.CV_THRESH_BINARY)
             cv.ShowImage(x[2], roiBitImg[num])
             count = cv.CountNonZero(roiBitImg[num])
-            log.append("%s count of %s is %s percent of frame" % (x[2], count, count/reduce(operator.__mul__, cv.GetSize(roiBitImg[num])) ))
+            nonzeroCountLog.append("%s count of %s is %s percent of frame" % (x[2], count, count/reduce(operator.__mul__, cv.GetSize(roiBitImg[num])) ))
             if features and featureImg:
-				for tup in features:
-					cv.Circle(featureImg, tuple([int(x) for x in tup]), 4, cv.RGB(17,100,255))			
-				cv.ShowImage("Good Features", featureImg)
-				
+                draw_features(featureImg,features)
+                cv.ShowImage("Good Features", featureImg)
+                
             cv.ResetImageROI(frameImg)
-    
+            
         cv.ShowImage("Main Window",frameImg)
-            #wait for the appropriate time so fps is proper when displaying doubt this takes into account the time it takes to write to screen 
+        #wait for the appropriate time so fps is proper when displaying doubt this takes into account the time it takes to write to screen 
         cv.WaitKey( waitPerFrameInMillisec  )
-    print "\n".join(log)
-    cv.DestroyWindow( "Main Window" )       
+        
+    process_nonzero_count_log(nonzeroCountLog)
+    cv.DestroyWindow( "Main Window" )    
+
 if __name__=="__main__":
     """monolithic main conditional for testing purposes
-    TODO: refactor into appropriate class
     """
     
     #open videos
-    vidFile = cv.CaptureFromFile( '/home/tarpsocks/mice_videos/mousewhirl/vid.avi' )
+    vidfilehandle = raw_input("Enter the path of the video. Just press enter for default:\n")
+    vidFile = cv.CaptureFromFile( vidfilehandle or '/home/tarpsocks/mice_videos/mousewhirl/vid.avi' )
     
     backgroundFile = cv.CaptureFromFile( '/home/tarpsocks/mice_videos/mousewhirl/background.avi' )
     
@@ -178,7 +93,7 @@ if __name__=="__main__":
     cv.NamedWindow("Main Window")
     
     #setting up data structures: mousewhirl defined data structures
-    ourROIFinder = rectangleFinder(frameImg, numRects, dilate_erode_reps = True, box_dragger = True, compute_hough = True, mouse_click_handler = True)
+    ourROIFinder = mousegui.rectangleFinder(frameImg, numRects, dilate_erode_reps = True, box_dragger = True, compute_hough = True, mouse_click_handler = True)
     #report the chosen rectangles
     print "Our rectangle tuples chosen are as follows: %s" % ourROIFinder.rects
     
@@ -218,7 +133,7 @@ if __name__=="__main__":
     #setting up data structures: video writers
     video_writer = cv.CreateVideoWriter("bitImage.avi", cv.CV_FOURCC('I', '4', '2', '0'), fps, cv.GetSize(frameImg), 1)
     video_difference = cv.CreateVideoWriter("difference.avi", cv.CV_FOURCC('I','4','2', '0'), fps, cv.GetSize(frameImg),1)
-    #prematurely halt after 1000 frames for testing purposes.
+
     cv.SetMouseCallback("Main Window", lambda x, y, z, u, t: None, None)
     
     tempframeImg = cv.CreateImage(cv.GetSize(frameImg), cv.IPL_DEPTH_8U, 1)
@@ -226,10 +141,9 @@ if __name__=="__main__":
     goodfeatures = cv.CreateImage(cv.GetSize(frameImg), cv.IPL_DEPTH_32F, 1)
     goodfeatures_temp = cv.CreateImage(cv.GetSize(frameImg), cv.IPL_DEPTH_32F, 1)
     good_features_to_track = cv.GoodFeaturesToTrack(tempframeImg, goodfeatures, goodfeatures_temp, 100, 0.01, 0.01)
-    for tup in good_features_to_track:
-        cv.Circle(tempframeImg, tuple([int(x) for x in tup]), 4, cv.RGB(17,100,255))
+    
     cv.ShowImage("Good Features", tempframeImg)
-
+    draw_features(tempframeImg, good_features_to_track)
     mainloop(nFrames, vidFile, roiImagesAndWindows, roiPrevFrame, roiDifference,roiGrayImg, roiBitImg, frameImg, waitPerFrameInMillisec, features = good_features_to_track, featureImg = tempframeImg)
 """ 
       cv.AbsDiff( background_img, frameImg, differenceImg ) 
