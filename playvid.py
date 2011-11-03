@@ -66,7 +66,6 @@ if __name__=="__main__":
     vidfilehandle = raw_input("Enter the path of the video. Just press enter for default:\n")
     vidFile = cv.CaptureFromFile( vidfilehandle or '/home/tarpsocks/mice_videos/mousewhirl/vid.avi' )
     
-    backgroundFile = cv.CaptureFromFile( '/home/tarpsocks/mice_videos/mousewhirl/background.avi' )
     
     #define constants:
     numRects = 3
@@ -78,17 +77,10 @@ if __name__=="__main__":
     width = int(cv.GetCaptureProperty(vidFile, cv.CV_CAP_PROP_FRAME_WIDTH))
     height = int(cv.GetCaptureProperty(vidFile, cv.CV_CAP_PROP_FRAME_HEIGHT))
     
-    background_fps = cv.GetCaptureProperty(vidFile, cv.CV_CAP_PROP_FPS)
-    background_WaitPerFrameInMillisec = int(1/fps * 1000/1)
-    
     
     
     frameImg = cv.QueryFrame( vidFile )
-    background_img = cv.QueryFrame(backgroundFile)
     
-    #fetch a few extra to make sure the frame is representative
-    for x in xrange(3):
-        background_img = cv.QueryFrame(backgroundFile)
     #setting up data structures: windows
     cv.NamedWindow("Main Window")
     
@@ -145,18 +137,7 @@ if __name__=="__main__":
     cv.ShowImage("Good Features", tempframeImg)
     draw_features(tempframeImg, good_features_to_track)
     mainloop(nFrames, vidFile, roiImagesAndWindows, roiPrevFrame, roiDifference,roiGrayImg, roiBitImg, frameImg, waitPerFrameInMillisec, features = good_features_to_track, featureImg = tempframeImg)
-""" 
-      cv.AbsDiff( background_img, frameImg, differenceImg ) 
-      cv.CvtColor(differenceImg,grayscale_frame, cv.CV_BGR2GRAY) 
-      cv.Threshold(grayscale_frame,bitImg,15,255,cv.CV_THRESH_BINARY)
-      cv.Erode(bitImg,bitImg, iterations=2)
-      cv.Dilate(bitImg, bitImg, iterations=1)
-    
-      cv.ShowImage("Processed",bitImg)
-      cv.CvtColor(bitImg, writtenImg, cv.CV_GRAY2BGR)
-      cv.WriteFrame(video_writer, writtenImg)
-      cv.WriteFrame(video_difference, differenceImg)
-    """
+
 
 
     
